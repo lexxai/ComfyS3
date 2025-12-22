@@ -1,6 +1,7 @@
 import os
 
 from ..client_s3 import get_s3_instance
+
 S3_INSTANCE = get_s3_instance()
 
 
