@@ -1,12 +1,14 @@
-import os
 import json
+import os
 import tempfile
+
 import numpy as np
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from comfy.cli_args import args
 
 from ..client_s3 import get_s3_instance
+
 S3_INSTANCE = get_s3_instance()
 
 
@@ -14,7 +16,7 @@ class SaveImageS3:
     def __init__(self):
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
         self.temp_dir = os.path.join(base_dir, "temp/")
-        self.s3_output_dir = os.getenv("S3_OUTPUT_DIR")
+        self.s3_output_dir = S3_INSTANCE.output_dir
         self.type = "output"
         self.prefix_append = ""
         self.compress_level = 4
