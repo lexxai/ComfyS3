@@ -1,16 +1,19 @@
 import os
-import torch
+
 import numpy as np
+import torch
 from PIL import Image, ImageOps, ImageSequence
 
 from ..client_s3 import get_s3_instance
+from ..logger import logger
+
 S3_INSTANCE = get_s3_instance()
 
 
 class LoadImageS3:
     @classmethod
     def INPUT_TYPES(s):
-        input_dir = os.getenv("S3_INPUT_DIR")
+        input_dir = S3_INSTANCE.input_dir
         try:
             files = S3_INSTANCE.get_files(prefix=input_dir)
         except Exception as e:
@@ -24,8 +27,12 @@ class LoadImageS3:
     FUNCTION = "load_image"
     
     def load_image(self, image):
-        s3_path = os.path.join(os.getenv("S3_INPUT_DIR"), image)
+        s3_path = os.path.join(S3_INSTANCE.input_dir, image)
         image_path = S3_INSTANCE.download_file(s3_path=s3_path, local_path=f"input/{image}")
+        if not image_path:
+            err = f"Failed to download image from S3"
+            logger.error(err)
+            return None
         
         img = Image.open(image_path)
         output_images = []
