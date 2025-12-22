@@ -16,3 +16,8 @@ Repository = "https://github.com/TemryL/ComfyS3"
 PublisherId = "temryl"
 DisplayName = "ComfyS3"
 Icon = ""
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.10",
+]

@@ -101,6 +101,26 @@ class S3:
             err = f"Failed to download file from S3: {e}"
             logger.error(err)
 
+    def download_object(self, s3_path:str) -> bytes | None:
+        try:
+            bucket = self.s3_client.Bucket(self.bucket_name)
+            if self.input_dir and not s3_path.startswith(f"/{self.input_dir}"):
+                s3_path = f"/{self.input_dir}/{s3_path.lstrip('/')}"
+            bucket_object = bucket.download_object(s3_path)
+            if bucket_object:
+                body = bucket_object.get("Body")
+                if body:
+                    return body.read()
+            err = f"Object not found in S3: {s3_path}"
+            logger.error(err)
+            return None
+        except NoCredentialsError:
+            err = "Credentials not available or not valid."
+            logger.error(err)
+        except Exception as e:
+            err = f"Failed to download object from S3: {e}"
+            logger.error(err)
+
     def upload_file(self, local_path, s3_path):
         try:
             bucket = self.s3_client.Bucket(self.bucket_name)
@@ -121,7 +141,7 @@ class S3:
             prefix = filename[:prefix_len + 1]
             try:
                 digits = int(filename[prefix_len + 1:].split('_')[0])
-            except:
+            except Exception:
                 digits = 0
             return (digits, prefix)
 

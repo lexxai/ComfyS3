@@ -1,4 +1,5 @@
 import os
+from io import BytesIO
 
 import numpy as np
 import torch
@@ -16,7 +17,7 @@ class LoadImageS3:
         input_dir = S3_INSTANCE.input_dir
         try:
             files = S3_INSTANCE.get_files(prefix=input_dir)
-        except Exception as e:
+        except Exception:
             files = []
         return {"required":
                     {"image": (sorted(files), {"image_upload": False})},
@@ -25,16 +26,29 @@ class LoadImageS3:
     CATEGORY = "ComfyS3"
     RETURN_TYPES = ("IMAGE", "MASK")
     FUNCTION = "load_image"
+    GET_OBJECT = True
     
     def load_image(self, image):
         s3_path = os.path.join(S3_INSTANCE.input_dir, image)
-        image_path = S3_INSTANCE.download_file(s3_path=s3_path, local_path=f"input/{image}")
-        if not image_path:
-            err = f"Failed to download image from S3"
-            logger.error(err)
-            return None
-        
-        img = Image.open(image_path)
+        if not self.GET_OBJECT:
+            image_path = S3_INSTANCE.download_file(s3_path=s3_path, local_path=f"input/{image}")
+            if not image_path:
+                err = "Failed to download object from S3"
+                logger.error(err)
+                raise Exception(err)
+
+            img = Image.open(image_path)
+        else:
+            binary_data = S3_INSTANCE.download_object(s3_path=s3_path)
+            if binary_data is None:
+                err = "Failed to download binary object from S3"
+                logger.error(err)
+                raise Exception(err)
+            with BytesIO(binary_data) as binary_stream:
+                img = Image.open(binary_stream)
+                img.load()
+            del binary_data
+
         output_images = []
         output_masks = []
         for i in ImageSequence.Iterator(img):
