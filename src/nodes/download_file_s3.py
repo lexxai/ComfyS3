@@ -22,4 +22,4 @@ class DownloadFileS3:
     def download_file_s3(self, s3_path, local_path):
         local_path = S3_INSTANCE.download_file(s3_path=s3_path, local_path=local_path)
         print(f"Downloaded file from S3 to {local_path}")
-        return local_path
+        return (local_path,)
