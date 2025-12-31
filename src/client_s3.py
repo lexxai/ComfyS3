@@ -20,6 +20,7 @@ class S3:
         self.s3_client = self.get_client()
         self.input_dir = os.getenv("S3_INPUT_DIR")
         self.output_dir = os.getenv("S3_OUTPUT_DIR")
+        self.list_limit_items  = os.getenv("LIST_LIMIT_ITEMS", 100)
         if not self.does_folder_exist(self.input_dir):
             self.create_folder(self.input_dir)
         if not self.does_folder_exist(self.output_dir):
@@ -58,8 +59,8 @@ class S3:
         if self.does_folder_exist(prefix):
             try:
                 bucket = self.s3_client.Bucket(self.bucket_name)
-                files = [obj.key for obj in bucket.objects.filter(Prefix=prefix)]
-                files = [f.replace(prefix, "") for f in files]
+                files = [obj.key for obj in bucket.objects.filter(Prefix=prefix).limit(self.list_limit_items)]
+                files = [f for f in files if not f.endswith("/")]
                 return files
             except Exception as e:
                 err = f"Failed to get files from S3: {e}"
@@ -90,8 +91,6 @@ class S3:
             os.makedirs(local_dir)
         try:
             bucket = self.s3_client.Bucket(self.bucket_name)
-            if self.input_dir and not s3_path.startswith(f"/{self.input_dir}"):
-                s3_path = f"/{self.input_dir}/{s3_path.lstrip('/')}"
             bucket.download_file(s3_path, local_path)
             return local_path
         except NoCredentialsError:
@@ -104,8 +103,6 @@ class S3:
     def download_object(self, s3_path:str) -> bytes | None:
         try:
             bucket = self.s3_client.Bucket(self.bucket_name)
-            if self.input_dir and not s3_path.startswith(f"/{self.input_dir}"):
-                s3_path = f"/{self.input_dir}/{s3_path.lstrip('/')}"
             bucket_object = bucket.download_object(s3_path)
             if bucket_object:
                 body = bucket_object.get("Body")
@@ -124,8 +121,6 @@ class S3:
     def upload_file(self, local_path, s3_path):
         try:
             bucket = self.s3_client.Bucket(self.bucket_name)
-            if self.output_dir and not s3_path.startswith(f"/{self.output_dir}"):
-                s3_path = f"/{self.output_dir}/{s3_path.lstrip('/')}"
             bucket.upload_file(local_path, s3_path)
             return s3_path
         except NoCredentialsError:

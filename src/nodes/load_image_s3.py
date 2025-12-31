@@ -1,4 +1,3 @@
-import os
 from io import BytesIO
 
 import numpy as np
@@ -19,19 +18,25 @@ class LoadImageS3:
             files = S3_INSTANCE.get_files(prefix=input_dir)
         except Exception:
             files = []
-        return {"required":
-                    {"image": (sorted(files), {"image_upload": False})},
-                }
-    
+        return {
+            "required": {
+                "image": (sorted(files), {"image_upload": False}),
+                "local_store": ("BOOLEAN", {"default": False}),
+            },
+        }
+
     CATEGORY = "ComfyS3"
     RETURN_TYPES = ("IMAGE", "MASK")
     FUNCTION = "load_image"
-    GET_OBJECT = True
-    
-    def load_image(self, image):
-        s3_path = os.path.join(S3_INSTANCE.input_dir, image)
-        if not self.GET_OBJECT:
-            image_path = S3_INSTANCE.download_file(s3_path=s3_path, local_path=f"input/{image}")
+    LOCAL_FOLDER = "input/"
+
+    def load_image(self, image, local_store=False) -> tuple:
+        s3_path = image.strip()
+        img = None
+        if not local_store:
+            image_path = S3_INSTANCE.download_file(
+                s3_path=s3_path, local_path=f"{self.LOCAL_FOLDER}{image}"
+            )
             if not image_path:
                 err = "Failed to download object from S3"
                 logger.error(err)
@@ -53,16 +58,16 @@ class LoadImageS3:
         output_masks = []
         for i in ImageSequence.Iterator(img):
             i = ImageOps.exif_transpose(i)
-            if i.mode == 'I':
+            if i.mode == "I":
                 i = i.point(lambda i: i * (1 / 255))
             image = i.convert("RGB")
             image = np.array(image).astype(np.float32) / 255.0
             image = torch.from_numpy(image)[None,]
-            if 'A' in i.getbands():
-                mask = np.array(i.getchannel('A')).astype(np.float32) / 255.0
-                mask = 1. - torch.from_numpy(mask)
+            if "A" in i.getbands():
+                mask = np.array(i.getchannel("A")).astype(np.float32) / 255.0
+                mask = 1.0 - torch.from_numpy(mask)
             else:
-                mask = torch.zeros((64,64), dtype=torch.float32, device="cpu")
+                mask = torch.zeros((64, 64), dtype=torch.float32, device="cpu")
             output_images.append(image)
             output_masks.append(mask.unsqueeze(0))
 
@@ -73,4 +78,4 @@ class LoadImageS3:
             output_image = output_images[0]
             output_mask = output_masks[0]
 
-        return (output_image, output_mask)
+        return output_image, output_mask
