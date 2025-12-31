@@ -33,10 +33,8 @@ class LoadImageS3:
     def load_image(self, image, local_store=False) -> tuple:
         s3_path = image.strip()
         img = None
-        if not local_store:
-            image_path = S3_INSTANCE.download_file(
-                s3_path=s3_path, local_path=f"{self.LOCAL_FOLDER}{image}"
-            )
+        if local_store:
+            image_path = S3_INSTANCE.download_file(s3_path=s3_path, local_path=f"{self.LOCAL_FOLDER}{image}")
             if not image_path:
                 err = "Failed to download object from S3"
                 logger.error(err)
