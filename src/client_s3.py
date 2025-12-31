@@ -120,10 +120,12 @@ class S3:
             logger.error(err)
             return None
 
-    def upload_file(self, local_path: str, s3_path: str):
+    def upload_file(self, local_path: str, s3_path: str, move_file: bool = True):
         try:
             bucket = self.s3_client.Bucket(self.bucket_name)
             bucket.upload_file(local_path, s3_path)
+            if move_file:
+                os.remove(local_path)
             return s3_path
         except NoCredentialsError:
             err = "Credentials not available or not valid."
