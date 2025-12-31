@@ -120,7 +120,7 @@ class S3:
             logger.error(err)
             return None
 
-    def upload_file(self, local_path: str, s3_path: str, move_file: bool = True):
+    def upload_file(self, local_path: str, s3_path: str, move_file: bool = False):
         try:
             bucket = self.s3_client.Bucket(self.bucket_name)
             bucket.upload_file(local_path, s3_path)
