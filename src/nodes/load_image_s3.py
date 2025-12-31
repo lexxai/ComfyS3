@@ -20,9 +20,10 @@ class LoadImageS3:
             files = []
         return {
             "required": {
-                "image": (sorted(files), {"image_upload": False}),
+                "image": ("STRING", {"default": "", "image_upload": False}),
             },
             "optional": {
+                "image_list": (sorted(files), {"image_upload": False}),
                 "local_store": ("BOOLEAN", {"default": False}),
             },
         }
@@ -32,8 +33,12 @@ class LoadImageS3:
     FUNCTION = "load_image"
     LOCAL_FOLDER = "input/"
 
-    def load_image(self, image, local_store=False) -> tuple:
-        s3_path = image.strip()
+    def load_image(self, image: str, local_store=False, image_list: str = None) -> tuple:
+        s3_path = image.strip() if image else image_list.strip()
+        if not s3_path:
+            err = "Failed to get S3 path"
+            logger.error(err)
+            raise Exception(err)
         img = None
         if local_store:
             image_path = S3_INSTANCE.download_file(s3_path=s3_path, local_path=f"{self.LOCAL_FOLDER}{image}")
