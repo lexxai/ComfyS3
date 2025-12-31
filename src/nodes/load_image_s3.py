@@ -21,6 +21,8 @@ class LoadImageS3:
         return {
             "required": {
                 "image": (sorted(files), {"image_upload": False}),
+            },
+            "optional": {
                 "local_store": ("BOOLEAN", {"default": False}),
             },
         }

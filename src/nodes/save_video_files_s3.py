@@ -13,11 +13,10 @@ class SaveVideoFilesS3:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "filename_prefix": ("STRING", {"default": "VideoFiles"}),
-                "filenames": ("VHS_FILENAMES",),
+            "required": {"filename_prefix": ("STRING", {"default": "VideoFiles"}), "filenames": ("VHS_FILENAMES",)},
+            "optional": {
                 "move_file": ("BOOLEAN", {"default": True}),
-            }
+            },
         }
 
     RETURN_TYPES = ("STRING",)
