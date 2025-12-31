@@ -11,26 +11,25 @@ load_dotenv(override=True)
 
 
 class S3:
-    def __init__(self, region, access_key, secret_key, bucket_name, endpoint_url):
-        self.region = region
-        self.access_key = access_key
-        self.secret_key = secret_key
-        self.bucket_name = bucket_name
-        self.endpoint_url = endpoint_url
+    def __init__(self, region: str, access_key: str, secret_key: str, bucket_name: str, endpoint_url: str):
+        self.region: str = region
+        self.access_key: str = access_key
+        self.secret_key: str = secret_key
+        self.bucket_name: str = bucket_name
+        self.endpoint_url: str = endpoint_url
         self.s3_client = self.get_client()
-        self.input_dir = os.getenv("S3_INPUT_DIR")
-        self.output_dir = os.getenv("S3_OUTPUT_DIR")
-        self.list_limit_items = os.getenv("LIST_LIMIT_ITEMS", 100)
-        if not self.does_folder_exist(self.input_dir):
+        self.input_dir: str = os.getenv("S3_INPUT_DIR", "")
+        self.output_dir: str = os.getenv("S3_OUTPUT_DIR", "")
+        self.list_limit_items: int = int(os.getenv("LIST_LIMIT_ITEMS", 100))
+        if self.input_dir and not self.does_folder_exist(self.input_dir):
             self.create_folder(self.input_dir)
-        if not self.does_folder_exist(self.output_dir):
+        if self.output_dir and not self.does_folder_exist(self.output_dir):
             self.create_folder(self.output_dir)
 
     def get_client(self):
         if not all([self.region, self.access_key, self.secret_key, self.bucket_name]):
             err = "Missing required S3 environment variables."
             logger.error(err)
-
         try:
             addressing_style = os.getenv("S3_ADDRESSING_STYLE", "auto")
             if addressing_style not in ["auto", "virtual", "path"]:
@@ -51,7 +50,7 @@ class S3:
             err = f"Failed to create S3 client: {e}"
             logger.error(err)
 
-    def get_files(self, prefix) -> list[str]:
+    def get_files(self, prefix: str) -> list[str]:
         if self.does_folder_exist(prefix):
             try:
                 bucket = self.s3_client.Bucket(self.bucket_name)
@@ -63,7 +62,7 @@ class S3:
                 logger.error(err)
         return []
 
-    def does_folder_exist(self, folder_name) -> bool | None:
+    def does_folder_exist(self, folder_name: str) -> bool | None:
         try:
             bucket = self.s3_client.Bucket(self.bucket_name)
             response = bucket.objects.filter(Prefix=folder_name)
@@ -72,7 +71,7 @@ class S3:
             err = f"Failed to check if folder exists in S3: {e}"
             logger.error(err)
 
-    def create_folder(self, folder_name) -> None:
+    def create_folder(self, folder_name: str) -> None:
         try:
             bucket = self.s3_client.Bucket(self.bucket_name)
             bucket.put_object(Key=f"{folder_name}/")
@@ -121,7 +120,7 @@ class S3:
             logger.error(err)
             return None
 
-    def upload_file(self, local_path, s3_path):
+    def upload_file(self, local_path: str, s3_path: str):
         try:
             bucket = self.s3_client.Bucket(self.bucket_name)
             bucket.upload_file(local_path, s3_path)
@@ -133,7 +132,9 @@ class S3:
             err = f"Failed to upload file to S3: {e}"
             logger.error(err)
 
-    def get_save_path(self, filename_prefix, image_width=0, image_height=0) -> tuple[str, str, int, str, str]:
+    def get_save_path(
+        self, filename_prefix: str, image_width: int = 0, image_height: int = 0
+    ) -> tuple[str, str, int, str, str]:
 
         def map_filename(filename: str) -> tuple[int, str]:
             prefix_len = len(os.path.basename(filename_prefix))
